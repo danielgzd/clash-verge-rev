@@ -1,6 +1,5 @@
 import { ReactNode, useEffect, useRef } from "react";
 import { useLockFn } from "ahooks";
-import { useRecoilValue } from "recoil";
 import { useTranslation } from "react-i18next";
 import {
   Button,
@@ -9,10 +8,11 @@ import {
   DialogContent,
   DialogTitle,
 } from "@mui/material";
-import { atomThemeMode } from "@/services/states";
+import { useThemeMode } from "@/services/states";
 import { readProfileFile, saveProfileFile } from "@/services/cmds";
 import { Notice } from "@/components/base";
 import { nanoid } from "nanoid";
+import getSystem from "@/utils/get-system";
 
 import * as monaco from "monaco-editor";
 import { editor } from "monaco-editor/esm/vs/editor/editor.api";
@@ -32,7 +32,7 @@ interface Props {
   language: "yaml" | "javascript" | "css";
   schema?: "clash" | "merge";
   onClose: () => void;
-  onChange?: (content?: string) => void;
+  onChange?: (prev?: string, curr?: string) => void;
 }
 
 // yaml worker
@@ -56,6 +56,23 @@ configureMonacoYaml(monaco, {
 });
 // PAC definition
 monaco.languages.typescript.javascriptDefaults.addExtraLib(pac, "pac.d.ts");
+monaco.languages.registerCompletionItemProvider("javascript", {
+  provideCompletionItems: (model, position) => ({
+    suggestions: [
+      {
+        label: "%mixed-port%",
+        kind: monaco.languages.CompletionItemKind.Text,
+        insertText: "%mixed-port%",
+        range: {
+          startLineNumber: position.lineNumber,
+          endLineNumber: position.lineNumber,
+          startColumn: model.getWordUntilPosition(position).startColumn - 1,
+          endColumn: model.getWordUntilPosition(position).endColumn - 1,
+        },
+      },
+    ],
+  }),
+});
 
 export const EditorViewer = (props: Props) => {
   const {
@@ -72,7 +89,8 @@ export const EditorViewer = (props: Props) => {
   const { t } = useTranslation();
   const editorRef = useRef<any>();
   const instanceRef = useRef<editor.IStandaloneCodeEditor | null>(null);
-  const themeMode = useRecoilValue(atomThemeMode);
+  const themeMode = useThemeMode();
+  const prevData = useRef<string>();
 
   useEffect(() => {
     if (!open) return;
@@ -113,9 +131,14 @@ export const EditorViewer = (props: Props) => {
         padding: {
           top: 33, // 顶部padding防止遮挡snippets
         },
-        fontFamily:
-          "Fira Code, Roboto Mono, Source Code Pro, Menlo, Monaco, Consolas, Courier New, monospace",
+        fontFamily: `Fira Code, JetBrains Mono, Roboto Mono, "Source Code Pro", Consolas, Menlo, Monaco, monospace, "Courier New", "Apple Color Emoji"${
+          getSystem() === "windows" ? ", twemoji mozilla" : ""
+        }`,
+        fontLigatures: true, // 连字符
+        smoothScrolling: true, // 平滑滚动
       });
+
+      prevData.current = data;
     });
 
     return () => {
@@ -127,15 +150,15 @@ export const EditorViewer = (props: Props) => {
   }, [open]);
 
   const onSave = useLockFn(async () => {
-    const value = instanceRef.current?.getValue();
+    const currData = instanceRef.current?.getValue();
 
-    if (value == null) return;
+    if (currData == null) return;
 
     try {
       if (mode === "profile") {
-        await saveProfileFile(property, value);
+        await saveProfileFile(property, currData);
       }
-      onChange?.(value);
+      onChange?.(prevData.current, currData);
       onClose();
     } catch (err: any) {
       Notice.error(err.message || err.toString());
@@ -152,11 +175,13 @@ export const EditorViewer = (props: Props) => {
 
       <DialogActions>
         <Button onClick={onClose} variant="outlined">
-          {t("Cancel")}
+          {t(readOnly ? "Close" : "Cancel")}
         </Button>
-        <Button onClick={onSave} variant="contained">
-          {t("Save")}
-        </Button>
+        {!readOnly && (
+          <Button onClick={onSave} variant="contained">
+            {t("Save")}
+          </Button>
+        )}
       </DialogActions>
     </Dialog>
   );

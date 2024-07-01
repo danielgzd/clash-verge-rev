@@ -81,7 +81,7 @@ export const ThemeViewer = forwardRef<DialogRef>((props, ref) => {
       title={t("Theme Setting")}
       okBtn={t("Save")}
       cancelBtn={t("Cancel")}
-      contentSx={{ width: 400, maxHeight: 300, overflow: "auto", pb: 0 }}
+      contentSx={{ width: 400, maxHeight: 505, overflow: "auto", pb: 0 }}
       onClose={() => setOpen(false)}
       onCancel={() => setOpen(false)}
       onOk={onSave}
@@ -129,8 +129,8 @@ export const ThemeViewer = forwardRef<DialogRef>((props, ref) => {
             property={theme.css_injection ?? ""}
             open={editorOpen}
             language="css"
-            onChange={(content) => {
-              theme.css_injection = content;
+            onChange={(_prev, curr) => {
+              theme.css_injection = curr;
               handleChange("css_injection");
             }}
             onClose={() => {

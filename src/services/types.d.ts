@@ -178,11 +178,15 @@ interface IProfileOption {
   self_proxy?: boolean;
   update_interval?: number;
   danger_accept_invalid_certs?: boolean;
+  merge?: string;
+  script?: string;
+  rules?: string;
+  proxies?: string;
+  groups?: string;
 }
 
 interface IProfilesConfig {
   current?: string;
-  chain?: string[];
   valid?: string[];
   items?: IProfileItem[];
 }
@@ -192,6 +196,12 @@ interface IVergeTestItem {
   name?: string;
   icon?: string;
   url: string;
+}
+
+interface ISeqProfileConfig {
+  prepend: string[];
+  append: string[];
+  delete: string[];
 }
 
 interface IVergeConfig {
@@ -216,6 +226,8 @@ interface IVergeConfig {
   enable_service_mode?: boolean;
   enable_silent_start?: boolean;
   enable_system_proxy?: boolean;
+  proxy_auto_config?: boolean;
+  pac_file_content?: string;
   enable_random_port?: boolean;
   verge_mixed_port?: number;
   verge_socks_port?: number;
@@ -251,76 +263,4 @@ interface IVergeConfig {
   auto_log_clean?: 0 | 1 | 2 | 3;
   proxy_layout_column?: number;
   test_list?: IVergeTestItem[];
-}
-
-type IClashConfigValue = any;
-
-interface IProfileMerge {
-  // clash config fields (default supports)
-  rules?: IClashConfigValue;
-  proxies?: IClashConfigValue;
-  "proxy-groups"?: IClashConfigValue;
-  "proxy-providers"?: IClashConfigValue;
-  "rule-providers"?: IClashConfigValue;
-  // clash config fields (use flag)
-  tun?: IClashConfigValue;
-  dns?: IClashConfigValue;
-  hosts?: IClashConfigValue;
-  script?: IClashConfigValue;
-  profile?: IClashConfigValue;
-  payload?: IClashConfigValue;
-  "interface-name"?: IClashConfigValue;
-  "routing-mark"?: IClashConfigValue;
-  // functional fields
-  use?: string[];
-  "prepend-rules"?: any[];
-  "append-rules"?: any[];
-  "prepend-proxies"?: any[];
-  "append-proxies"?: any[];
-  "prepend-proxy-groups"?: any[];
-  "append-proxy-groups"?: any[];
-  // fix
-  ebpf?: any;
-  experimental?: any;
-  iptables?: any;
-  sniffer?: any;
-  authentication?: any;
-  "bind-address"?: any;
-  "external-ui"?: any;
-  "auto-redir"?: any;
-  "socks-port"?: any;
-  "redir-port"?: any;
-  "tproxy-port"?: any;
-  "geodata-mode"?: any;
-  "tcp-concurrent"?: any;
-}
-
-// partial of the clash config
-type IProfileData = Partial<{
-  rules: any[];
-  proxies: any[];
-  "proxy-groups": any[];
-  "proxy-providers": any[];
-  "rule-providers": any[];
-
-  [k: string]: any;
-}>;
-
-interface IChainItem {
-  item: IProfileItem;
-  merge?: IProfileMerge;
-  script?: string;
-}
-
-interface IEnhancedPayload {
-  chain: IChainItem[];
-  valid: string[];
-  current: IProfileData;
-  callback: string;
-}
-
-interface IEnhancedResult {
-  data: IProfileData;
-  status: string;
-  error?: string;
 }
