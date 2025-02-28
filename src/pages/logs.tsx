@@ -1,44 +1,63 @@
 import { useMemo, useState } from "react";
-import { useRecoilState } from "recoil";
 import { Box, Button, IconButton, MenuItem } from "@mui/material";
 import { Virtuoso } from "react-virtuoso";
 import { useTranslation } from "react-i18next";
+import { useLocalStorage } from "foxact/use-local-storage";
+
 import {
   PlayCircleOutlineRounded,
   PauseCircleOutlineRounded,
 } from "@mui/icons-material";
-import { atomEnableLog, atomLogData } from "@/services/states";
+import { useLogData, LogLevel, clearLogs } from "@/hooks/use-log-data";
+import { useEnableLog } from "@/services/states";
 import { BaseEmpty, BasePage } from "@/components/base";
 import LogItem from "@/components/log/log-item";
-import { useCustomTheme } from "@/components/layout/use-custom-theme";
+import { useTheme } from "@mui/material/styles";
 import { BaseSearchBox } from "@/components/base/base-search-box";
 import { BaseStyledSelect } from "@/components/base/base-styled-select";
+import { SearchState } from "@/components/base/base-search-box";
 
 const LogPage = () => {
   const { t } = useTranslation();
-  const [logData, setLogData] = useRecoilState(atomLogData);
-  const [enableLog, setEnableLog] = useRecoilState(atomEnableLog);
-  const { theme } = useCustomTheme();
+  const [enableLog, setEnableLog] = useEnableLog();
+  const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
-  const [logState, setLogState] = useState("all");
+  const [logLevel, setLogLevel] = useLocalStorage<LogLevel>(
+    "log:log-level",
+    "info",
+  );
   const [match, setMatch] = useState(() => (_: string) => true);
+  const logData = useLogData(logLevel);
+  const [searchState, setSearchState] = useState<SearchState>();
 
   const filterLogs = useMemo(() => {
     return logData
-      .filter((data) =>
-        logState === "all" ? true : data.type.includes(logState)
-      )
-      .filter((data) => match(data.payload));
-  }, [logData, logState, match]);
+      ? logData.filter((data) => {
+          // 构建完整的搜索文本，包含时间、类型和内容
+          const searchText =
+            `${data.time || ""} ${data.type} ${data.payload}`.toLowerCase();
+
+          return logLevel === "all"
+            ? match(searchText)
+            : data.type.toLowerCase() === logLevel && match(searchText);
+        })
+      : [];
+  }, [logData, logLevel, match]);
 
   return (
     <BasePage
       full
       title={t("Logs")}
-      contentStyle={{ height: "100%" }}
+      contentStyle={{
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "auto",
+      }}
       header={
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
           <IconButton
+            title={t("Pause")}
             size="small"
             color="inherit"
             onClick={() => setEnableLog((e) => !e)}
@@ -50,13 +69,17 @@ const LogPage = () => {
             )}
           </IconButton>
 
-          <Button
-            size="small"
-            variant="contained"
-            onClick={() => setLogData([])}
-          >
-            {t("Clear")}
-          </Button>
+          {enableLog === true && (
+            <Button
+              size="small"
+              variant="contained"
+              onClick={() => {
+                clearLogs();
+              }}
+            >
+              {t("Clear")}
+            </Button>
+          )}
         </Box>
       }
     >
@@ -71,36 +94,38 @@ const LogPage = () => {
         }}
       >
         <BaseStyledSelect
-          value={logState}
-          onChange={(e) => setLogState(e.target.value)}
+          value={logLevel}
+          onChange={(e) => setLogLevel(e.target.value as LogLevel)}
         >
           <MenuItem value="all">ALL</MenuItem>
-          <MenuItem value="inf">INFO</MenuItem>
-          <MenuItem value="warn">WARN</MenuItem>
-          <MenuItem value="err">ERROR</MenuItem>
+          <MenuItem value="info">INFO</MenuItem>
+          <MenuItem value="warning">WARNING</MenuItem>
+          <MenuItem value="error">ERROR</MenuItem>
+          <MenuItem value="debug">DEBUG</MenuItem>
         </BaseStyledSelect>
-        <BaseSearchBox onSearch={(match) => setMatch(() => match)} />
+        <BaseSearchBox
+          onSearch={(matcher, state) => {
+            setMatch(() => matcher);
+            setSearchState(state);
+          }}
+        />
       </Box>
 
-      <Box
-        height="calc(100% - 65px)"
-        sx={{
-          margin: "10px",
-          borderRadius: "8px",
-          bgcolor: isDark ? "#282a36" : "#ffffff",
-        }}
-      >
-        {filterLogs.length > 0 ? (
-          <Virtuoso
-            initialTopMostItemIndex={999}
-            data={filterLogs}
-            itemContent={(index, item) => <LogItem value={item} />}
-            followOutput={"smooth"}
-          />
-        ) : (
-          <BaseEmpty text="No Logs" />
-        )}
-      </Box>
+      {filterLogs.length > 0 ? (
+        <Virtuoso
+          initialTopMostItemIndex={999}
+          data={filterLogs}
+          style={{
+            flex: 1,
+          }}
+          itemContent={(index, item) => (
+            <LogItem value={item} searchState={searchState} />
+          )}
+          followOutput={"smooth"}
+        />
+      ) : (
+        <BaseEmpty />
+      )}
     </BasePage>
   );
 };

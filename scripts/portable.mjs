@@ -1,4 +1,4 @@
-import fs from "fs-extra";
+import fs from "fs";
 import path from "path";
 import AdmZip from "adm-zip";
 import { createRequire } from "module";
@@ -29,18 +29,20 @@ async function resolvePortable() {
     : `./src-tauri/target/release`;
   const configDir = path.join(releaseDir, ".config");
 
-  if (!(await fs.pathExists(releaseDir))) {
+  if (!fs.existsSync(releaseDir)) {
     throw new Error("could not found the release dir");
   }
 
-  await fs.mkdir(configDir);
-  await fs.createFile(path.join(configDir, "PORTABLE"));
+  await fsp.mkdir(configDir, { recursive: true });
+  if (!fs.existsSync(path.join(configDir, "PORTABLE"))) {
+    await fsp.writeFile(path.join(configDir, "PORTABLE"), "");
+  }
 
   const zip = new AdmZip();
 
   zip.addLocalFile(path.join(releaseDir, "Clash Verge.exe"));
-  zip.addLocalFile(path.join(releaseDir, "clash-meta.exe"));
-  zip.addLocalFile(path.join(releaseDir, "clash-meta-alpha.exe"));
+  zip.addLocalFile(path.join(releaseDir, "verge-mihomo.exe"));
+  zip.addLocalFile(path.join(releaseDir, "verge-mihomo-alpha.exe"));
   zip.addLocalFolder(path.join(releaseDir, "resources"), "resources");
   zip.addLocalFolder(configDir, ".config");
 

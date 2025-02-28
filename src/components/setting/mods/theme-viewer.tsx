@@ -14,7 +14,7 @@ import { useVerge } from "@/hooks/use-verge";
 import { defaultTheme, defaultDarkTheme } from "@/pages/_theme";
 import { BaseDialog, DialogRef, Notice } from "@/components/base";
 import { EditorViewer } from "@/components/profile/editor-viewer";
-import { Edit } from "@mui/icons-material";
+import { EditRounded } from "@mui/icons-material";
 
 export const ThemeViewer = forwardRef<DialogRef>((props, ref) => {
   const { t } = useTranslation();
@@ -28,7 +28,7 @@ export const ThemeViewer = forwardRef<DialogRef>((props, ref) => {
   useImperativeHandle(ref, () => ({
     open: () => {
       setOpen(true);
-      setTheme({ ...theme_setting } || {});
+      setTheme({ ...theme_setting });
     },
     close: () => setOpen(false),
   }));
@@ -81,7 +81,7 @@ export const ThemeViewer = forwardRef<DialogRef>((props, ref) => {
       title={t("Theme Setting")}
       okBtn={t("Save")}
       cancelBtn={t("Cancel")}
-      contentSx={{ width: 400, maxHeight: 300, overflow: "auto", pb: 0 }}
+      contentSx={{ width: 400, maxHeight: 505, overflow: "auto", pb: 0 }}
       onClose={() => setOpen(false)}
       onCancel={() => setOpen(false)}
       onOk={onSave}
@@ -115,7 +115,7 @@ export const ThemeViewer = forwardRef<DialogRef>((props, ref) => {
         <Item>
           <ListItemText primary={t("CSS Injection")} />
           <Button
-            startIcon={<Edit />}
+            startIcon={<EditRounded />}
             variant="outlined"
             onClick={() => {
               setEditorOpen(true);
@@ -123,20 +123,21 @@ export const ThemeViewer = forwardRef<DialogRef>((props, ref) => {
           >
             {t("Edit")} CSS
           </Button>
-          <EditorViewer
-            title={`${t("Edit")} CSS`}
-            mode="text"
-            property={theme.css_injection ?? ""}
-            open={editorOpen}
-            language="css"
-            onChange={(content) => {
-              theme.css_injection = content;
-              handleChange("css_injection");
-            }}
-            onClose={() => {
-              setEditorOpen(false);
-            }}
-          />
+          {editorOpen && (
+            <EditorViewer
+              open={true}
+              title={`${t("Edit")} CSS`}
+              initialData={Promise.resolve(theme.css_injection ?? "")}
+              language="css"
+              onSave={(_prev, curr) => {
+                theme.css_injection = curr;
+                handleChange("css_injection");
+              }}
+              onClose={() => {
+                setEditorOpen(false);
+              }}
+            />
+          )}
         </Item>
       </List>
     </BaseDialog>

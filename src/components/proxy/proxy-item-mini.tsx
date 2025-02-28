@@ -21,6 +21,8 @@ export const ProxyItemMini = (props: Props) => {
 
   const { t } = useTranslation();
 
+  const presetList = ["DIRECT", "REJECT", "REJECT-DROP", "PASS", "COMPATIBLE"];
+  const isPreset = presetList.includes(proxy.name);
   // -1/<=0 为 不显示
   // -2 为 loading
   const [delay, setDelay] = useState(-1);
@@ -28,6 +30,7 @@ export const ProxyItemMini = (props: Props) => {
   const timeout = verge?.default_latency_timeout || 10000;
 
   useEffect(() => {
+    if (isPreset) return;
     delayManager.setListener(proxy.name, group.name, setDelay);
 
     return () => {
@@ -157,10 +160,22 @@ export const ProxyItemMini = (props: Props) => {
                 TFO
               </TypeBox>
             )}
+            {proxy.mptcp && (
+              <TypeBox color="text.secondary" component="span">
+                MPTCP
+              </TypeBox>
+            )}
+            {proxy.smux && (
+              <TypeBox color="text.secondary" component="span">
+                SMUX
+              </TypeBox>
+            )}
           </Box>
         )}
       </Box>
-      <Box sx={{ ml: 0.5, color: "primary.main" }}>
+      <Box
+        sx={{ ml: 0.5, color: "primary.main", display: isPreset ? "none" : "" }}
+      >
         {delay === -2 && (
           <Widget>
             <BaseLoading />
@@ -234,7 +249,9 @@ const Widget = styled(Box)(({ theme: { typography } }) => ({
   borderRadius: "4px",
 }));
 
-const TypeBox = styled(Box)(({ theme: { palette, typography } }) => ({
+const TypeBox = styled(Box, {
+  shouldForwardProp: (prop) => prop !== "component",
+})<{ component?: React.ElementType }>(({ theme: { palette, typography } }) => ({
   display: "inline-block",
   border: "1px solid #ccc",
   borderColor: "text.secondary",

@@ -1,5 +1,5 @@
 import { Button, ButtonGroup } from "@mui/material";
-import { appWindow } from "@tauri-apps/api/window";
+import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import {
   CloseRounded,
   CropSquareRounded,
@@ -9,6 +9,7 @@ import {
   PushPinRounded,
 } from "@mui/icons-material";
 import { useEffect, useState } from "react";
+const appWindow = getCurrentWebviewWindow();
 
 export const LayoutControl = () => {
   const minWidth = 40;
@@ -36,6 +37,7 @@ export const LayoutControl = () => {
     <ButtonGroup
       variant="text"
       sx={{
+        zIndex: 1000,
         height: "100%",
         ".MuiButtonGroup-grouped": {
           borderRadius: "0px",

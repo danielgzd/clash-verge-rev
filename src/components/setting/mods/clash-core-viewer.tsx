@@ -5,26 +5,25 @@ import { useTranslation } from "react-i18next";
 import { useVerge } from "@/hooks/use-verge";
 import { useLockFn } from "ahooks";
 import { LoadingButton } from "@mui/lab";
-import { SwitchAccessShortcut, RestartAlt } from "@mui/icons-material";
+import {
+  SwitchAccessShortcutRounded,
+  RestartAltRounded,
+} from "@mui/icons-material";
 import {
   Box,
   Button,
-  Tooltip,
+  Chip,
   List,
   ListItemButton,
   ListItemText,
 } from "@mui/material";
-import { changeClashCore, restartSidecar } from "@/services/cmds";
+import { changeClashCore, restartCore } from "@/services/cmds";
 import { closeAllConnections, upgradeCore } from "@/services/api";
-import { grantPermission } from "@/services/cmds";
-import getSystem from "@/utils/get-system";
 
 const VALID_CORE = [
-  { name: "Clash Meta", core: "clash-meta" },
-  { name: "Clash Meta Alpha", core: "clash-meta-alpha" },
+  { name: "Mihomo", core: "verge-mihomo", chip: "Release Version" },
+  { name: "Mihomo Alpha", core: "verge-mihomo-alpha", chip: "Alpha Version" },
 ];
-
-const OS = getSystem();
 
 export const ClashCoreViewer = forwardRef<DialogRef>((props, ref) => {
   const { t } = useTranslation();
@@ -39,7 +38,7 @@ export const ClashCoreViewer = forwardRef<DialogRef>((props, ref) => {
     close: () => setOpen(false),
   }));
 
-  const { clash_core = "clash-meta" } = verge ?? {};
+  const { clash_core = "verge-mihomo" } = verge ?? {};
 
   const onCoreChange = useLockFn(async (core: string) => {
     if (core === clash_core) return;
@@ -52,18 +51,7 @@ export const ClashCoreViewer = forwardRef<DialogRef>((props, ref) => {
         mutate("getClashConfig");
         mutate("getVersion");
       }, 100);
-      Notice.success(t("Switched to _clash Core", { core: `${core}` }), 1000);
-    } catch (err: any) {
-      Notice.error(err?.message || err.toString());
-    }
-  });
-
-  const onGrant = useLockFn(async (core: string) => {
-    try {
-      await grantPermission(core);
-      // 自动重启
-      if (core === clash_core) await restartSidecar();
-      Notice.success(t("Permissions Granted Successfully for _clash Core", { core: `${core}` }), 1000);
+      // Notice.success(t("Switched to _clash Core", { core: `${core}` }), 1000);
     } catch (err: any) {
       Notice.error(err?.message || err.toString());
     }
@@ -71,7 +59,7 @@ export const ClashCoreViewer = forwardRef<DialogRef>((props, ref) => {
 
   const onRestart = useLockFn(async () => {
     try {
-      await restartSidecar();
+      await restartCore();
       Notice.success(t(`Clash Core Restarted`), 1000);
     } catch (err: any) {
       Notice.error(err?.message || err.toString());
@@ -100,7 +88,7 @@ export const ClashCoreViewer = forwardRef<DialogRef>((props, ref) => {
             <LoadingButton
               variant="contained"
               size="small"
-              startIcon={<SwitchAccessShortcut />}
+              startIcon={<SwitchAccessShortcutRounded />}
               loadingPosition="start"
               loading={upgrading}
               sx={{ marginRight: "8px" }}
@@ -112,7 +100,7 @@ export const ClashCoreViewer = forwardRef<DialogRef>((props, ref) => {
               variant="contained"
               size="small"
               onClick={onRestart}
-              startIcon={<RestartAlt />}
+              startIcon={<RestartAltRounded />}
             >
               {t("Restart")}
             </Button>
@@ -128,7 +116,7 @@ export const ClashCoreViewer = forwardRef<DialogRef>((props, ref) => {
         marginTop: "-8px",
       }}
       disableOk
-      cancelBtn={t("Back")}
+      cancelBtn={t("Close")}
       onClose={() => setOpen(false)}
       onCancel={() => setOpen(false)}
     >
@@ -140,22 +128,7 @@ export const ClashCoreViewer = forwardRef<DialogRef>((props, ref) => {
             onClick={() => onCoreChange(each.core)}
           >
             <ListItemText primary={each.name} secondary={`/${each.core}`} />
-
-            {(OS === "macos" || OS === "linux") && (
-              <Tooltip title={t("Tun mode requires")}>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    onGrant(each.core);
-                  }}
-                >
-                  {t("Grant")}
-                </Button>
-              </Tooltip>
-            )}
+            <Chip label={t(`${each.chip}`)} size="small" />
           </ListItemButton>
         ))}
       </List>

@@ -30,6 +30,7 @@ export const ConnectionDetail = forwardRef<ConnectionDetailRef>(
         anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
         open={open}
         onClose={onClose}
+        sx={{ maxWidth: "520px" }}
         message={
           detail ? (
             <InnerConnectionDetail data={detail} onClose={onClose} />
@@ -37,7 +38,7 @@ export const ConnectionDetail = forwardRef<ConnectionDetailRef>(
         }
       />
     );
-  }
+  },
 );
 
 interface InnerProps {
@@ -51,7 +52,10 @@ const InnerConnectionDetail = ({ data, onClose }: InnerProps) => {
   const rule = rulePayload ? `${data.rule}(${rulePayload})` : data.rule;
   const host = metadata.host
     ? `${metadata.host}:${metadata.destinationPort}`
-    : `${metadata.destinationIP}:${metadata.destinationPort}`;
+    : `${metadata.remoteDestination}:${metadata.destinationPort}`;
+  const Destination = metadata.destinationIP
+    ? metadata.destinationIP
+    : metadata.remoteDestination;
 
   const information = [
     { label: t("Host"), value: host },
@@ -78,7 +82,8 @@ const InnerConnectionDetail = ({ data, onClose }: InnerProps) => {
       label: t("Source"),
       value: `${metadata.sourceIP}:${metadata.sourcePort}`,
     },
-    { label: t("Destination IP"), value: metadata.destinationIP },
+    { label: t("Destination"), value: Destination },
+    { label: t("DestinationPort"), value: `${metadata.destinationPort}` },
     { label: t("Type"), value: `${metadata.type}(${metadata.network})` },
   ];
 
